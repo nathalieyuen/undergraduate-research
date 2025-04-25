@@ -1,0 +1,103 @@
+---
+title: "Top 100 Billboard"
+date: today
+format: html
+---
+
+```{r}
+#| label: setup
+
+library(tidyverse)
+library(ggthemes)
+```
+
+```{r}
+#| label: data
+
+# Source: https://github.com/utdata/rwd-billboard-data
+
+billboard_full <- readr::read_csv(
+  "https://raw.githubusercontent.com/utdata/rwd-billboard-data/refs/heads/main/data-out/hot-100-current.csv"
+) |> 
+    mutate(
+    week = lubridate::ymd(chart_week),
+    year = lubridate::year(chart_week),
+    month = lubridate::month(chart_week),
+    day = lubridate::day(chart_week)
+  )
+```
+
+```{r}
+
+# Reivew data
+
+glimpse(billboard_full)
+```
+
+```{r}
+
+# Date range
+
+billboard_full |> 
+  summarize(
+    chart_week_min = min(chart_week),
+    chart_week_max = max(chart_week)
+  )
+
+```
+
+```{r}
+
+# Most number of weeks at #1 - Top 5 songs
+
+billboard_full |> 
+  filter(current_week == 1) |> 
+  count(
+    performer, title
+  ) |> 
+  top_n(5) |> 
+  ggplot(
+    aes(
+      n,
+      reorder(title, n)
+    )
+  ) +
+  geom_col() +
+  geom_text(aes(label = n), hjust = -.5) +
+  xlim(0, 20) +
+  labs(
+    x = "Number of weeks at #1",
+    y = "Song"
+  ) +
+  theme_bw()
+```
+
+```{r}
+
+# Most weeks at #1 - Top 3 - Chart trajectory
+
+billboard_full |> 
+  filter(
+    title == "Old Town Road" |
+      title == "A Bar Song (Tipsy)" |
+      title == "All I Want For Christmas Is You"
+    ) |> 
+  ggplot(
+    aes(
+      chart_week,
+      current_week
+    )
+  ) +
+  geom_point() +
+  geom_line() +
+  scale_y_reverse() +
+  scale_x_date(date_labels = "%b %Y") +
+  facet_wrap(vars(title), ncol = 3) +
+  labs(
+    x = "Date",
+    y = "Chart position"
+  ) +
+  theme_bw()
+```
+
+
